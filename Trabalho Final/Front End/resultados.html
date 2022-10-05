@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Search on Wiki</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="resultado.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
+          rel="stylesheet">
+</head>
+
+<body>
+    <div id="container">
+        <div id=" centralizar">
+            <header>
+            <h2 class="title"> Search on Wiki</h2>
+            </header>
+
+            <form>
+                <div id="busca" class="col-3 input-effect">
+                    <input class="effect-1" type="text" id= "must" placeholder="Must" />
+                </div>
+
+                <div id="busca" class="col-3 input-effect">
+                    <input class="effect-1" type="text" id= "should" placeholder="Should" />
+                </div>
+
+                <div id="busca" class="col-3 input-effect">
+                    <input class="effect-1" type="text" id= "must_not" placeholder="Must not" />
+                </div>
+
+                <div id="busca">
+                    <button class="btn lupa" role="button" type="submit" id="btnBusca">  <span class="material-icons">search</span></button>
+                </div>
+            </form>
+
+            <div id="resultados">
+
+            </div>
+
+            <div class="center">
+                <div class="pagination" id = "paginacao">
+                    <a href="#" id ="antes">&laquo;</a>
+                    <a id = "anterior"> 1 </a>
+                    <a href="#" class="active" id = "atual">2</a>
+                    <a href="#"> ... </a>
+                    <a id = "ultimo">  </a>
+                    <a href="#" id="depois">&raquo;</a>
+                </div>
+            </div>
+
+            <footer>
+                <a class="button-81" role="button" id = "aBaixar"> Download .json</a>
+            </footer>
+
+        </div>
+    </div>
+</body>
+
+<script>
+     // busca
+     const resultados = document.getElementById("resultados");
+     const must = document.getElementById("must");
+     const must_not = document.getElementById("must_not");
+     const should = document.getElementById("should");
+
+     //botoes
+     const baixar = document.getElementById('aBaixar');
+     baixar.style.visibility = "hidden";
+
+     //paginacao
+     const paginacao = document.getElementById("paginacao");
+     paginacao.style.visibility = "hidden";
+
+     let anterior = document.getElementById("anterior");
+     anterior.style.visibility = "hidden";
+     let atual = document.getElementById("atual");
+     let ultima = document.getElementById("ultimo");
+
+     atual.innerHTML = "1";
+
+     let pagina = 1;
+     let total;
+
+     function busca() {
+        resultados.innerHTML = "";
+        ultima.innerHTML = "";
+
+        fetch(`http://localhost:8080/search?must=${must.value}&must_not=${must_not.value}&should=${should.value}&page=${pagina}`, { method: 'GET', mode: 'cors' })
+            .then((response) => response.json())
+            .then(resultado => {
+            console.log(resultado);
+                let dados = resultado.list;
+                total = resultado.total;
+                for (let i = 0; i < dados.length; i++) {
+                    resultados.innerHTML += `<div class='card border-secondary mb-3' style='max-width: 80rem;'>
+                    <div class='card-body'>
+                        <h5 class='card-title'> <a href =${dados[i].url}>${dados[i].title} </a> </h5>
+                        <p class='card-text'>${dados[i].content}</p>
+                    </div>
+                </div>`;
+                }
+
+                if (dados.length > 0) {
+                    baixar.style.visibility = 'visible';
+                    var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dados));
+                    baixar.setAttribute("href",     dataStr     );
+                    baixar.setAttribute("download", `page${pagina}.json`);
+                } else {
+                    baixar.style.visibility = 'hidden';
+                }
+
+                if (total > 10){
+                    paginacao.style.visibility = "visible";
+                } else {
+                    paginacao.style.visibility = "hidden";
+                }
+                paginasTotais = Math.floor (total / 10);
+                ultima.innerHTML += `${paginasTotais}`;
+                console.log(dados);
+            });
+     }
+
+    document.getElementById("btnBusca").addEventListener("click", (e) => {
+        e.preventDefault();
+        busca();
+    });
+
+    document.getElementById("antes").addEventListener("click", antes);
+    document.getElementById("depois").addEventListener("click", depois);
+
+    function antes(e) {
+        anterior.innerHTML = "";
+        atual.innerHTML = "";
+        if(pagina > 1) {
+            pagina =pagina -1;
+            atual.innerHTML += `${pagina}`;
+            anterior.innerHTML += `${pagina-1}`;
+            console.log("pagina: " + pagina);
+            busca();
+        }
+        if(pagina == 1)
+            anterior.innerHTML = "";
+    }
+
+    function depois(e) {
+        anterior.style.visibility = "visible";
+        anterior.innerHTML = "";
+        atual.innerHTML = "";
+        if (pagina < (total / 10)) {
+            console.log("pagina: " + pagina)
+            anterior.innerHTML += `${pagina}`;
+            pagina = pagina + 1;
+            atual.innerHTML += `${pagina}`;
+            busca();
+        }
+    }
+
+
+
+</script>
+
+</html>
